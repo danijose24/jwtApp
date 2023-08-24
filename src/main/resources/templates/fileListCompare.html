@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        /* Center align text in the table cells */
+        td.file-name {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<h2> File List to Compare</h2>
+
+<form action="/processSelectedFiles" method="post">
+    <table>
+        <thead>
+        <tr>
+            <th>Select</th>
+            <th>File Name</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Iterate over the fileList and create rows -->
+        <tr th:each="file : ${fileList}">
+            <td>
+                <input type="checkbox" name="selectedFiles" th:value="${file.fileName}">
+            </td>
+            <td  class="file-name" th:text="${file.fileName}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <input type="submit" value="Process Selected Files">
+</form>
+
+</body>
+</html>

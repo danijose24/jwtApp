@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>File Comparison</title>
+</head>
+<body>
+<h1>File Comparison</h1>
+
+<form th:action="@{/compare}" method="post" enctype="multipart/form-data">
+    <input type="file" name="file1" accept=".txt"><br>
+    <input type="file" name="file2" accept=".txt"><br>
+    <button type="submit">Compare</button>
+</form>
+</body>
+</html>
