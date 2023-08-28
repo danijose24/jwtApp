@@ -1,4 +1,4 @@
-package com.training.controller;
+package com.training.jwt.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

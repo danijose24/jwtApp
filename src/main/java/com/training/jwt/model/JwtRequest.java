@@ -1,4 +1,4 @@
-package com.training.model;
+package com.training.jwt.model;
 
 import java.io.Serializable;
 

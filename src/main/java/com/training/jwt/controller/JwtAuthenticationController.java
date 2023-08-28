@@ -1,5 +1,6 @@
-package com.training.controller;
+package com.training.jwt.controller;
 
+import com.training.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,13 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-import com.training.service.JwtUserDetailsService;
+import com.training.jwt.service.JwtUserDetailsService;
 
 
-import com.training.config.JwtTokenUtil;
-import com.training.model.JwtRequest;
-import com.training.model.JwtResponse;
-import com.training.model.UserDTO;
+import com.training.jwt.model.JwtRequest;
+import com.training.jwt.model.JwtResponse;
+import com.training.jwt.model.UserDTO;
 
 @RestController
 @CrossOrigin
@@ -28,7 +28,7 @@ public class JwtAuthenticationController {
 	private AuthenticationManager authenticationManager;
 
 	@Autowired
-	private JwtTokenUtil jwtTokenUtil;
+	private JwtUtil jwtTokenUtil;
 
 	@Autowired
 	private JwtUserDetailsService userDetailsService;
@@ -42,8 +42,9 @@ public class JwtAuthenticationController {
 				.loadUserByUsername(authenticationRequest.getUsername());
 
 		final String token = jwtTokenUtil.generateToken(userDetails);
+		final String newGeneratedToken = jwtTokenUtil.generateToken(userDetails);
 
-		return ResponseEntity.ok(new JwtResponse(token));
+		return ResponseEntity.ok(new JwtResponse(token, newGeneratedToken));
 	}
 	
 	@RequestMapping(value = "/register", method = RequestMethod.POST)

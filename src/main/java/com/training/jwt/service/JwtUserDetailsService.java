@@ -1,4 +1,4 @@
-package com.training.service;
+package com.training.jwt.service;
 
 import java.util.ArrayList;
 
@@ -9,9 +9,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.training.dao.UserDao;
-import com.training.model.DAOUser;
-import com.training.model.UserDTO;
+import com.training.jwt.dao.UserDao;
+import com.training.jwt.model.User;
+import com.training.jwt.model.UserDTO;
 
 @Service
 public class JwtUserDetailsService implements UserDetailsService {
@@ -23,19 +23,19 @@ public class JwtUserDetailsService implements UserDetailsService {
 	private PasswordEncoder bcryptEncoder;
 
 	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		DAOUser user = userDao.findByUsername(username);
+	public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
+		User user = userDao.findByUserName(userName);
 		if (user == null) {
-			throw new UsernameNotFoundException("User not found with username: " + username);
+			throw new UsernameNotFoundException("User not found with username: " + userName);
 		}
-		return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
+		return new org.springframework.security.core.userdetails.User(user.getUserName(), user.getUserPassword(),
 				new ArrayList<>());
 	}
 	
-	public DAOUser save(UserDTO user) {
-		DAOUser newUser = new DAOUser();
-		newUser.setUsername(user.getUsername());
-		newUser.setPassword(bcryptEncoder.encode(user.getPassword()));
+	public User save(UserDTO user) {
+		User newUser = new User();
+		newUser.setUserName(user.getUserName());
+		newUser.setUserPassword(bcryptEncoder.encode(user.getUserPassword()));
 		return userDao.save(newUser);
 	}
 }
