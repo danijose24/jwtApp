@@ -18,7 +18,6 @@ import com.training.jwt.service.JwtUserDetailsService;
 
 import com.training.jwt.model.JwtRequest;
 import com.training.jwt.model.JwtResponse;
-import com.training.jwt.model.UserDTO;
 
 @RestController
 @CrossOrigin

@@ -3,7 +3,7 @@ package com.training.jwt.service;
 
 import com.training.jwt.dao.RoleDao;
 import com.training.jwt.dao.UserDao;
-import com.training.jwt.model.Roles;
+import com.training.jwt.model.Role;
 import com.training.jwt.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,29 +26,12 @@ public class UserService {
 
     public void initRoleAndUser() {
 
-        Roles adminRole = new Roles();
-        adminRole.setRoleName("ROLE_ADMIN");
-        roleDao.save(adminRole);
-
-        Roles userRole = new Roles();
-        userRole.setRoleName("ROLE_USER");
-        roleDao.save(userRole);
-
-        User adminUser = new User();
-        adminUser.setUserName("admin123");
-        adminUser.setUserPassword(getEncodedPassword("admin@pass"));
-
-        Set<Roles> adminRoles = new HashSet<>();
-        adminRoles.add(adminRole);
-        adminUser.setRoles(adminRoles);
-        userDao.save(adminUser);
-
     }
     public User registerNewUser(User user) {
-        Roles role = roleDao.findById("ROLE_USER").get();
-        Set<Roles> userRoles = new HashSet<>();
+        Role role = roleDao.findById("ROLE_ADMIN").get();
+        Set<Role> userRoles = new HashSet<>();
         userRoles.add(role);
-        user.setRoles(userRoles);
+        user.setRole(userRoles);
         user.setUserPassword(getEncodedPassword(user.getUserPassword()));
 
         return userDao.save(user);

@@ -22,25 +22,7 @@ import java.util.Set;
 public class JwtService implements UserDetailsService {
 
     @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
     private UserDao userDao;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-/*    public JwtResponse createJwtToken(JwtRequest jwtRequest) throws Exception {
-        String userName = jwtRequest.getUsername();
-        String userPassword = jwtRequest.getPassword();
-        authenticate(userName, userPassword);
-
-        UserDetails userDetails = loadUserByUsername(userName);
-        String newGeneratedToken = jwtUtil.generateToken(userDetails);
-
-        User user = userDao.findByUserName(userName);
-        return new JwtResponse(user.getUserName(), newGeneratedToken);
-    }*/
 
     @Override
     public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
@@ -59,19 +41,10 @@ public class JwtService implements UserDetailsService {
 
     private Set getAuthority(User user) {
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
-        user.getRoles().forEach(role -> {
+        user.getRole().forEach(role -> {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getRoleName()));
         });
         return authorities;
     }
 
-    private void authenticate(String userName, String userPassword) throws Exception {
-        try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userName, userPassword));
-        } catch (DisabledException e) {
-            throw new Exception("USER_DISABLED", e);
-        } catch (BadCredentialsException e) {
-            throw new Exception("INVALID_CREDENTIALS", e);
-        }
-    }
 }

@@ -52,10 +52,10 @@ public class JwtUtil {
 
         Map<String, Object> claims = new HashMap<>();
 
-       List<String> roles = userDetails.getAuthorities().stream()
+       List<String> role = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        claims.put("roles", roles);
+        claims.put("role", role);
 
         return Jwts.builder()
                 .setClaims(claims)

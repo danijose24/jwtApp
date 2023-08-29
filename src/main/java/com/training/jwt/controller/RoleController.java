@@ -1,7 +1,7 @@
 package com.training.jwt.controller;
 
 
-import com.training.jwt.model.Roles;
+import com.training.jwt.model.Role;
 import com.training.jwt.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +15,7 @@ public class RoleController {
     private RoleService roleService;
 
     @PostMapping({"/createNewRole"})
-    public Roles createNewRole(@RequestBody Roles role) {
+    public Role createNewRole(@RequestBody Role role) {
         return roleService.createNewRole(role);
     }
 }

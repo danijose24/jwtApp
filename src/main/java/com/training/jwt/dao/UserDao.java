@@ -10,7 +10,7 @@ import com.training.jwt.model.User;
 @Repository
 public interface UserDao extends CrudRepository<User, Integer> {
 	
-	@Query("SELECT u FROM User u JOIN FETCH u.roles WHERE u.userName = :username")
+	@Query("SELECT u FROM User u JOIN FETCH u.role WHERE u.userName = :username")
 	User findByUserName(@Param("username") String username);
 
 
