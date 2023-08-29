@@ -21,10 +21,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Controller
 public class FileController {
@@ -127,45 +130,42 @@ public class FileController {
     }
 
     @PostMapping(ApplicationConstants.COMPARE)
-    public ResponseEntity<String> compareFiles(@RequestParam("file1") MultipartFile file1,
-                                               @RequestParam("file2") MultipartFile file2,
+    public ResponseEntity<String> compareFiles(@RequestParam("sourceFile") MultipartFile file1,
+                                               @RequestParam("destinationFile") MultipartFile file2,
                                                Model model) throws IOException {
-        String content1 = new String(file1.getBytes());
-        String content2 = new String(file2.getBytes());
+        String sourceFile = new String(file1.getBytes());
+        String destinationFile = new String(file2.getBytes());
 
-        List<String> lines1 = readLines(content1);
-        List<String> lines2 = readLines(content2);
-       return diffrenciatTheFileChanges(content1,content2,lines1,lines2);
+        List<String> linesOfSource = readLines(sourceFile);
+        List<String> linesOfDestination = readLines(destinationFile);
+       return diffrenciatTheFileChanges(sourceFile,destinationFile,linesOfSource,linesOfDestination);
 
     }
-private ResponseEntity<String>  diffrenciatTheFileChanges(String content1,String content2,List<String> lines1,List<String> lines2){
-    Patch<String> patch = DiffUtils.diff(lines1, lines2);
+    private ResponseEntity<String> diffrenciatTheFileChanges(String sourceFile, String destinationFile, List<String> linesOfSource, List<String> linesOfDestination) {
+        Patch<String> patch = DiffUtils.diff(linesOfSource, linesOfDestination);
 
-    StringWriter writer = new StringWriter();
-    List<String> unifiedDiffLines = DiffUtils.generateUnifiedDiff("File 1", "File 2", lines1, patch, 0);
+        List<String> unifiedDiffLines = DiffUtils.generateUnifiedDiff("sourceFile", "destinationFile", linesOfSource, patch, 0);
 
-    StringBuilder formattedDiff = new StringBuilder();
-    for (Delta<String> delta : patch.getDeltas()) {
-        for (String line : delta.getOriginal().getLines()) {
-            if (delta.getType() == Delta.TYPE.INSERT) {
-                formattedDiff.append("<span class=\"addition\">").append(line).append("</span>").append("\n");
-            } else if (delta.getType() == Delta.TYPE.DELETE) {
-                formattedDiff.append("<span class=\"subtraction\">").append(line).append("</span>").append("\n");
-            } else {
-                formattedDiff.append(line).append("\n");
-            }
-        }
+        StringBuilder formattedDiff = new StringBuilder();
+        patch.getDeltas().forEach(delta -> {
+            delta.getOriginal().getLines().forEach(line -> {
+                String formattedLine = delta.getType() == Delta.TYPE.INSERT ? "<span class=\"addition\">" + line + "</span>" :
+                        delta.getType() == Delta.TYPE.DELETE ? "<span class=\"subtraction\">" + line + "</span>" :
+                                line;
+                formattedDiff.append(formattedLine).append("\n");
+            });
+        });
+
+        Map<String, String> response = new HashMap<>();
+        response.put("sourceContent", sourceFile);
+        response.put("destinationContent", destinationFile);
+        response.put("formattedDiff", formattedDiff.toString());
+
+        String htmlResponse = generateHtmlResponse(response);
+
+        return ResponseEntity.ok(htmlResponse);
     }
-
-    Map<String, String> response = new HashMap<>();
-    response.put("sourceContent", content1);
-    response.put("destinationContent", content2);
-    response.put("formattedDiff", formattedDiff.toString());
-
-    String htmlResponse = generateHtmlResponse(response);
-
-    return ResponseEntity.ok(htmlResponse);
-}
+    
     private String generateHtmlResponse(Map<String, String> response) {
         String template = "<!DOCTYPE html>\n" +
                 "<html>\n" +
@@ -243,22 +243,16 @@ private ResponseEntity<String>  diffrenciatTheFileChanges(String content1,String
      * @throws IOException
      */
     @PostMapping("/processSelectedFiles")
-    public ResponseEntity< String> processSelectedFiles(@RequestParam(name = "selectedFiles", required = false) List<String> selectedFiles) throws IOException {
+    public ResponseEntity<String> processSelectedFiles(@RequestParam(name = "selectedFiles", required = false) List<String> selectedFiles) throws IOException {
         if (selectedFiles != null && !selectedFiles.isEmpty()) {
-            List<String> selectedFileOPs = new ArrayList<>();
-
-            for (String fileName : selectedFiles) {
-
-                String filePath = uploadDir + fileName;
-
-                selectedFileOPs.add(filePath);
-            }
+            List<String> selectedFileOPs = selectedFiles.stream()
+                    .map(fileName -> uploadDir + fileName)
+                    .collect(Collectors.toList());
 
             return fileToCompare(selectedFileOPs);
         }
-        return null;
+        return ResponseEntity.ok().build();
     }
-
     /**
      * Method to compare Two files
      *
@@ -267,29 +261,28 @@ private ResponseEntity<String>  diffrenciatTheFileChanges(String content1,String
      * @throws IOException
      */
     public ResponseEntity<String> fileToCompare(List<String> selectedFileOPs) throws IOException {
+        List<File> filesToCompare = selectedFileOPs.stream()
+                .map(File::new)
+                .filter(file -> file.exists() && file.isFile())
+                .collect(Collectors.toList());
 
-        List<File> filesToCompare = new ArrayList<>();
-
-        for (String filePath : selectedFileOPs) {
-            // String filePath = selectedFileOP.getFileLocation() + selectedFileOP.getFileName();
-            File file = new File(filePath);
-
-            if (file.exists() && file.isFile()) {
-                filesToCompare.add(file);
-            } else {
-                System.out.println("File not found or is not a regular file: " + filePath);
-            }
+        if (filesToCompare.size() < 2) {
+            return ResponseEntity.badRequest().body("Not enough files to compare");
         }
 
-        File file1 = filesToCompare.get(0);
-        File file2 = filesToCompare.get(1);
-        String content1 = new String(file1.toString().getBytes());
-        String content2 = new String(file2.toString().getBytes());
+        File sourceFile = filesToCompare.get(0);
+        File destinationFile = filesToCompare.get(1);
 
-        List<String> lines1 = readLines(content1);
-        List<String> lines2 = readLines(content2);
-        return diffrenciatTheFileChanges(content1,content2,lines1,lines2);
+        List<String> linesOfSource = readLines(sourceFile);
+        List<String> linesOfDestination = readLines(destinationFile);
 
+        return diffrenciatTheFileChanges(sourceFile.toString(), destinationFile.toString(), linesOfSource, linesOfDestination);
+    }
+
+    private List<String> readLines(File file) throws IOException {
+        try (Stream<String> lines = Files.lines(file.toPath(), StandardCharsets.UTF_8)) {
+            return lines.collect(Collectors.toList());
+        }
     }
 
     /**
@@ -299,16 +292,18 @@ private ResponseEntity<String>  diffrenciatTheFileChanges(String content1,String
      * @return
      */
     private MediaType determineContentType(String filename) {
-        if (filename.endsWith(".txt")) {
-            return MediaType.TEXT_PLAIN;
-        } else if (filename.endsWith(ApplicationConstants.PDF)) {
-            return MediaType.APPLICATION_PDF;
-        } else if (filename.endsWith(ApplicationConstants.JPG) || filename.endsWith(ApplicationConstants.JPEG)) {
-            return MediaType.IMAGE_JPEG;
-        } else if (filename.endsWith(ApplicationConstants.PNG)) {
-            return MediaType.IMAGE_PNG;
-        } else {
-            return MediaType.APPLICATION_OCTET_STREAM;
-        }
+        Map<String, MediaType> mediaTypeMap = new HashMap<>();
+        mediaTypeMap.put(".", MediaType.TEXT_PLAIN);
+        mediaTypeMap.put(ApplicationConstants.PDF, MediaType.APPLICATION_PDF);
+        mediaTypeMap.put(ApplicationConstants.JPG, MediaType.IMAGE_JPEG);
+        mediaTypeMap.put(ApplicationConstants.JPEG, MediaType.IMAGE_JPEG);
+        mediaTypeMap.put(ApplicationConstants.PNG, MediaType.IMAGE_PNG);
+
+        return mediaTypeMap.getOrDefault(getFileExtension(filename), MediaType.APPLICATION_OCTET_STREAM);
+    }
+
+    private String getFileExtension(String filename) {
+        int lastDotIndex = filename.lastIndexOf(".");
+        return lastDotIndex >= 0 ? filename.substring(lastDotIndex) : "";
     }
 }

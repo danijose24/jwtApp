@@ -2,8 +2,6 @@ package com.training.jwt.service;
 
 
 import com.training.jwt.dao.UserDao;
-import com.training.jwt.model.JwtRequest;
-import com.training.jwt.model.JwtResponse;
 import com.training.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,7 +30,7 @@ public class JwtService implements UserDetailsService {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    public JwtResponse createJwtToken(JwtRequest jwtRequest) throws Exception {
+/*    public JwtResponse createJwtToken(JwtRequest jwtRequest) throws Exception {
         String userName = jwtRequest.getUsername();
         String userPassword = jwtRequest.getPassword();
         authenticate(userName, userPassword);
@@ -42,7 +40,7 @@ public class JwtService implements UserDetailsService {
 
         User user = userDao.findByUserName(userName);
         return new JwtResponse(user.getUserName(), newGeneratedToken);
-    }
+    }*/
 
     @Override
     public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {

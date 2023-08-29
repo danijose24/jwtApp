@@ -27,11 +27,11 @@ public class UserService {
     public void initRoleAndUser() {
 
         Roles adminRole = new Roles();
-        adminRole.setRoleName("Admin");
+        adminRole.setRoleName("ROLE_ADMIN");
         roleDao.save(adminRole);
 
         Roles userRole = new Roles();
-        userRole.setRoleName("User");
+        userRole.setRoleName("ROLE_USER");
         roleDao.save(userRole);
 
         User adminUser = new User();
@@ -45,7 +45,7 @@ public class UserService {
 
     }
     public User registerNewUser(User user) {
-        Roles role = roleDao.findById("User").get();
+        Roles role = roleDao.findById("ROLE_USER").get();
         Set<Roles> userRoles = new HashSet<>();
         userRoles.add(role);
         user.setRoles(userRoles);

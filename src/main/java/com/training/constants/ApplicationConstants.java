@@ -22,4 +22,5 @@ public class ApplicationConstants {
     public static final String JPG = ".jpg";
     public static final String PNG = ".png";
     public static final String JPEG=".jpeg";
+    public static final String TXT=".txt";
 }

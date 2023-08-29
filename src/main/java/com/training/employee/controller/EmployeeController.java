@@ -3,6 +3,7 @@ package com.training.employee.controller;
 import com.training.employee.entity.Employee;
 import com.training.employee.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class EmployeeController {
      *
      * @return A list containing all employees.
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping(GET_EMPLOYEES)
     public List<Employee> getAllEmployees() {
         return employeeService.getAllEmployees();
@@ -32,6 +34,7 @@ public class EmployeeController {
      * @param id The ID of the employee to retrieve.
      * @return The employee with the specified ID.
      */
+    @PreAuthorize("hasRole('ROLE_USER')")
     @GetMapping(GET_EMPLOYEE_BY_ID + "/{id}")
     public Employee getEmployeeById(@PathVariable String id) {
         return employeeService.getEmployeeById(id);
@@ -42,6 +45,7 @@ public class EmployeeController {
      *
      * @return A list containing all employees including the newly added one.
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping(ADD_EMPLOYEE_TO_LIST)
     public List<Employee> addEmployeeById() {
         Employee empObj = new Employee("I103", "Daniel", "Engineer");
