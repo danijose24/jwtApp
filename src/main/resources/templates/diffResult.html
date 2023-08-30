@@ -1,40 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>File Comparison</title>
+    <meta charset="UTF-8">
+    <title>File Comparison Result</title>
     <style>
-        .addition {
-            background-color: #eaffea; /* Light green for additions */
+        .diff-container {
+            font-family: monospace;
+            display: flex;
+            gap: 10px;
         }
 
-        .subtraction {
-            background-color: #ffd7d7; /* Light red for subtractions */
+        .left-side {
+            flex: 1;
+            background-color: #ffcccc; /* Light red */
+            color: #c00000; /* Dark red */
+        }
+
+        .right-side {
+            flex: 1;
+            background-color: #ccffcc; /* Light green */
+            color: #008000; /* Dark green */
+        }
+
+        .same {
+            background-color: #ffff99; /* Light yellow */
         }
     </style>
 </head>
 <body>
 <h1>File Comparison Result</h1>
-<table class="comparison-table">
-    <tr>
-        <th>Source File</th>
-        <th>Destination File</th>
-    </tr>
-    <tr>
-        <td class="source-file" id="source-file">
-            <h2>Source File</h2>
-            <pre><!-- Display content of source file -->
-{{ sourceContent }}</pre>
-        </td>
-        <td class="destination-file" id="destination-file">
-            <h2>Destination File</h2>
-            <pre><!-- Display content of destination file -->
-{{ destinationContent }}</pre>
-        </td>
-    </tr>
-</table>
+
 <div class="diff-container">
-    <h2>File Differences</h2>
-    <pre>{{ formattedDiff }}</pre>
+    <div class="left-side">
+            <pre>
+                <span th:each="line : ${diffLines}" th:if="${line.startsWith('-')}" th:utext="${#strings.escapeXml(line)} + '&lt;br&gt;'"></span>
+        </pre>
+    </div>
+    <div class="right-side">
+            <pre>
+                <span th:each="line : ${diffLines}" th:if="${line.startsWith('+')}" th:utext="${#strings.escapeXml(line)} + '&lt;br&gt;'"></span>
+            </pre>
+    </div>
 </div>
 </body>
 </html>

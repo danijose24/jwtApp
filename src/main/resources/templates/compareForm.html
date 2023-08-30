@@ -8,8 +8,8 @@
 <h1>File Comparison</h1>
 
 <form th:action="@{/compare}" method="post" enctype="multipart/form-data">
-    <input type="file" name="file1" accept=".txt"><br>
-    <input type="file" name="file2" accept=".txt"><br>
+    <input type="file" name="sourceFile" accept=".txt"><br>
+    <input type="file" name="destinationFile" accept=".txt"><br>
     <button type="submit">Compare</button>
 </form>
 </body>

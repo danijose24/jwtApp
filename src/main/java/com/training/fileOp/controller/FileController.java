@@ -128,18 +128,21 @@ public class FileController {
     public String compareUploadForm() {
         return "compareForm";
     }
-
     @PostMapping(ApplicationConstants.COMPARE)
-    public ResponseEntity<String> compareFiles(@RequestParam("sourceFile") MultipartFile file1,
-                                               @RequestParam("destinationFile") MultipartFile file2,
-                                               Model model) throws IOException {
-        String sourceFile = new String(file1.getBytes());
-        String destinationFile = new String(file2.getBytes());
+    public String compareFiles(@RequestParam("sourceFile") MultipartFile sourceFile,
+                               @RequestParam("destinationFile") MultipartFile destinationFile, Model model) throws IOException {
+        String sourceFileContent = new String(sourceFile.getBytes());
+        String destinationFileContent = new String(destinationFile.getBytes());
 
-        List<String> linesOfSource = readLines(sourceFile);
-        List<String> linesOfDestination = readLines(destinationFile);
-       return diffrenciatTheFileChanges(sourceFile,destinationFile,linesOfSource,linesOfDestination);
+        List<String> sourceFileLines = readLines(sourceFileContent);
+        List<String> destinationFileLines = readLines(destinationFileContent);
 
+        Patch<String> patch = DiffUtils.diff(sourceFileLines, destinationFileLines);
+
+        List<String> unifiedDiff = DiffUtils.generateUnifiedDiff("Source File", "Destination File", sourceFileLines, patch, 0);
+
+        model.addAttribute("diffLines", unifiedDiff);
+        return "diffResult";
     }
     private ResponseEntity<String> diffrenciatTheFileChanges(String sourceFile, String destinationFile, List<String> linesOfSource, List<String> linesOfDestination) {
         Patch<String> patch = DiffUtils.diff(linesOfSource, linesOfDestination);
