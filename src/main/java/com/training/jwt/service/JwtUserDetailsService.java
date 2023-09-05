@@ -1,6 +1,7 @@
 package com.training.jwt.service;
 
 import com.training.jwt.dao.UserDao;
+import com.training.jwt.model.Permission;
 import com.training.jwt.model.Role;
 import com.training.jwt.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,11 @@ public class JwtUserDetailsService implements UserDetailsService {
 		}
 		for (Role role : user.getRole()) {
 			authorities.add(new SimpleGrantedAuthority(role.getRoleName()));
+			for (Permission permission : role.getPermissions()) {
+				authorities.add(new SimpleGrantedAuthority(permission.getPermissionName()));
+			}
 		}
+
 		return new org.springframework.security.core.userdetails.User(user.getUserName(), user.getUserPassword(),
 				authorities);
 	}

@@ -3,7 +3,6 @@ package com.training.fileOp.controller;
 import com.training.constants.ApplicationConstants;
 import com.training.fileOp.entity.FileOP;
 import com.training.fileOp.service.FileService;
-import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
 import org.apache.commons.io.IOUtils;
@@ -16,18 +15,26 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.training.constants.ApplicationConstants.*;
 
 @Controller
 public class FileController {
@@ -38,7 +45,11 @@ public class FileController {
     @Value(ApplicationConstants.UPLOAD_DIR)
     private String uploadDir;
 
-    @GetMapping("/uploadForm")
+    @GetMapping(FILE_HOME)
+    public String showHome() {
+        return "fileHome";
+    }
+    @GetMapping(UPLOAD_FORM)
     public String showUploadForm() {
         return "uploadForm";
     }
@@ -59,18 +70,18 @@ public class FileController {
                 Path path = Paths.get(uploadDir + file.getOriginalFilename());
                 Files.write(path, bytes);
                 String successMessage = "File uploaded successfully: " + file.getOriginalFilename();
-                model.addAttribute("message", successMessage);
+                model.addAttribute(MESSAGE, successMessage);
                 fileOPObj.setFileLocation(uploadDir);
                 fileOPObj.setFileName(file.getOriginalFilename());
                 fileService.saveFileOP(fileOPObj);
             } catch (IOException e) {
                 e.printStackTrace();
-                model.addAttribute("message", "File upload failed: " + e.getMessage());
+                model.addAttribute(MESSAGE, "File upload failed: " + e.getMessage());
             }
         } else {
-            model.addAttribute("message", "No file chosen for upload.");
+            model.addAttribute(MESSAGE, "No file chosen for upload.");
         }
-        return "uploadForm";
+        return UPLOAD_FORM_PAGE;
     }
 
     /**
@@ -137,84 +148,60 @@ public class FileController {
         List<String> sourceFileLines = readLines(sourceFileContent);
         List<String> destinationFileLines = readLines(destinationFileContent);
 
+        return getFormatedDifferentiateString(sourceFileLines, destinationFileLines, model);
+    }
+
+    /**
+     * Method to get the files from the Drive using file Name and Location
+     *
+     * @return result of compared files content.
+     * @throws IOException
+     */
+    @PostMapping("/processSelectedFiles")
+    public String processSelectedFiles(@RequestParam(name = "selectedFiles", required = false) List<String> selectedFiles, Model model) throws IOException {
+        if (selectedFiles != null && !selectedFiles.isEmpty()) {
+            List<String> selectedFileOPs = selectedFiles.stream()
+                    .map(fileName -> uploadDir + fileName)
+                    .collect(Collectors.toList());
+
+            return fileToCompare(selectedFileOPs, model);
+        }
+        return null;
+    }
+
+    /**
+     * Method to compare Two files
+     *
+     * @param selectedFileOPs
+     * @return String which contains the Difference between the two files
+     * @throws IOException
+     */
+    public String fileToCompare(List<String> selectedFileOPs, Model model) throws IOException {
+        List<File> filesToCompare = selectedFileOPs.stream()
+                .map(File::new)
+                .filter(file -> file.exists() && file.isFile())
+                .collect(Collectors.toList());
+
+        if (filesToCompare.size() < 2) {
+            return "Not enough files to compare";
+        }
+
+        File sourceFile = filesToCompare.get(0);
+        File destinationFile = filesToCompare.get(1);
+
+        List<String> sourceFileLines = readLines(sourceFile);
+        List<String> destinationFileLines = readLines(destinationFile);
+        return getFormatedDifferentiateString(sourceFileLines, destinationFileLines, model);
+
+    }
+
+    private String getFormatedDifferentiateString(List<String> sourceFileLines, List<String> destinationFileLines, Model model) {
         Patch<String> patch = DiffUtils.diff(sourceFileLines, destinationFileLines);
 
         List<String> unifiedDiff = DiffUtils.generateUnifiedDiff("Source File", "Destination File", sourceFileLines, patch, 0);
 
         model.addAttribute("diffLines", unifiedDiff);
         return "diffResult";
-    }
-    private ResponseEntity<String> diffrenciatTheFileChanges(String sourceFile, String destinationFile, List<String> linesOfSource, List<String> linesOfDestination) {
-        Patch<String> patch = DiffUtils.diff(linesOfSource, linesOfDestination);
-
-        List<String> unifiedDiffLines = DiffUtils.generateUnifiedDiff("sourceFile", "destinationFile", linesOfSource, patch, 0);
-
-        StringBuilder formattedDiff = new StringBuilder();
-        patch.getDeltas().forEach(delta -> {
-            delta.getOriginal().getLines().forEach(line -> {
-                String formattedLine = delta.getType() == Delta.TYPE.INSERT ? "<span class=\"addition\">" + line + "</span>" :
-                        delta.getType() == Delta.TYPE.DELETE ? "<span class=\"subtraction\">" + line + "</span>" :
-                                line;
-                formattedDiff.append(formattedLine).append("\n");
-            });
-        });
-
-        Map<String, String> response = new HashMap<>();
-        response.put("sourceContent", sourceFile);
-        response.put("destinationContent", destinationFile);
-        response.put("formattedDiff", formattedDiff.toString());
-
-        String htmlResponse = generateHtmlResponse(response);
-
-        return ResponseEntity.ok(htmlResponse);
-    }
-    
-    private String generateHtmlResponse(Map<String, String> response) {
-        String template = "<!DOCTYPE html>\n" +
-                "<html>\n" +
-                "<head>\n" +
-                "    <title>File Comparison</title>\n" +
-                "    <style>\n" +
-                "        .addition {\n" +
-                "            background-color: #eaffea; /* Light green for additions */\n" +
-                "        }\n" +
-                "        .subtraction {\n" +
-                "            background-color: #ffd7d7; /* Light red for subtractions */\n" +
-                "        }\n" +
-                "    </style>\n" +
-                "</head>\n" +
-                "<body>\n" +
-                "    <h1>File Comparison Result</h1>\n" +
-                "    <table class=\"comparison-table\">\n" +
-                "        <tr>\n" +
-                "            <th>Source File</th>\n" +
-                "            <th>Destination File</th>\n" +
-                "        </tr>\n" +
-                "        <tr>\n" +
-                "            <td class=\"source-file\" id=\"source-file\">\n" +
-                "                <h2>Source File</h2>\n" +
-                "                <pre><!-- Display content of source file -->\n" +
-                response.get("sourceContent") +
-                "                </pre>\n" +
-                "            </td>\n" +
-                "            <td class=\"destination-file\" id=\"destination-file\">\n" +
-                "                <h2>Destination File</h2>\n" +
-                "                <pre><!-- Display content of destination file -->\n" +
-                response.get("destinationContent") +
-                "                </pre>\n" +
-                "            </td>\n" +
-                "        </tr>\n" +
-                "    </table>\n" +
-                "    <div class=\"diff-container\">\n" +
-                "        <h2>File Differences</h2>\n" +
-                "        <pre>\n" +
-                response.get("formattedDiff") +
-                "        </pre>\n" +
-                "    </div>\n" +
-                "</body>\n" +
-                "</html>";
-
-        return template;
     }
 
 
@@ -232,55 +219,13 @@ public class FileController {
      * @param model
      * @return List of Files
      */
-    @GetMapping("/getAllFiles")
+    @GetMapping(GET_ALL_FILES)
     public String listFiles(Model model) {
         List<FileOP> fileOPList = fileService.getAllFiles();
         model.addAttribute("fileList", fileOPList);
         return "fileListCompare"; // Return the name of the Thymeleaf template to list files
     }
 
-    /**
-     * Method to get the files from the Drive using file Name and Location
-     *
-     * @return result of compared files content.
-     * @throws IOException
-     */
-    @PostMapping("/processSelectedFiles")
-    public ResponseEntity<String> processSelectedFiles(@RequestParam(name = "selectedFiles", required = false) List<String> selectedFiles) throws IOException {
-        if (selectedFiles != null && !selectedFiles.isEmpty()) {
-            List<String> selectedFileOPs = selectedFiles.stream()
-                    .map(fileName -> uploadDir + fileName)
-                    .collect(Collectors.toList());
-
-            return fileToCompare(selectedFileOPs);
-        }
-        return ResponseEntity.ok().build();
-    }
-    /**
-     * Method to compare Two files
-     *
-     * @param selectedFileOPs
-     * @return String which contains the Difference between the two files
-     * @throws IOException
-     */
-    public ResponseEntity<String> fileToCompare(List<String> selectedFileOPs) throws IOException {
-        List<File> filesToCompare = selectedFileOPs.stream()
-                .map(File::new)
-                .filter(file -> file.exists() && file.isFile())
-                .collect(Collectors.toList());
-
-        if (filesToCompare.size() < 2) {
-            return ResponseEntity.badRequest().body("Not enough files to compare");
-        }
-
-        File sourceFile = filesToCompare.get(0);
-        File destinationFile = filesToCompare.get(1);
-
-        List<String> linesOfSource = readLines(sourceFile);
-        List<String> linesOfDestination = readLines(destinationFile);
-
-        return diffrenciatTheFileChanges(sourceFile.toString(), destinationFile.toString(), linesOfSource, linesOfDestination);
-    }
 
     private List<String> readLines(File file) throws IOException {
         try (Stream<String> lines = Files.lines(file.toPath(), StandardCharsets.UTF_8)) {
@@ -296,7 +241,7 @@ public class FileController {
      */
     private MediaType determineContentType(String filename) {
         Map<String, MediaType> mediaTypeMap = new HashMap<>();
-        mediaTypeMap.put(".", MediaType.TEXT_PLAIN);
+        mediaTypeMap.put(ApplicationConstants.TXT, MediaType.TEXT_PLAIN);
         mediaTypeMap.put(ApplicationConstants.PDF, MediaType.APPLICATION_PDF);
         mediaTypeMap.put(ApplicationConstants.JPG, MediaType.IMAGE_JPEG);
         mediaTypeMap.put(ApplicationConstants.JPEG, MediaType.IMAGE_JPEG);
@@ -305,8 +250,13 @@ public class FileController {
         return mediaTypeMap.getOrDefault(getFileExtension(filename), MediaType.APPLICATION_OCTET_STREAM);
     }
 
-    private String getFileExtension(String filename) {
-        int lastDotIndex = filename.lastIndexOf(".");
-        return lastDotIndex >= 0 ? filename.substring(lastDotIndex) : "";
+    /**
+     * Method to get the file Extension type
+     * @param fileName
+     * @return
+     */
+    private String getFileExtension(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf(".");
+        return lastDotIndex >= 0 ? fileName.substring(lastDotIndex) : "";
     }
 }

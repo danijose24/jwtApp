@@ -1,63 +1,47 @@
 package com.training.excel.controller;
 
-import com.training.constants.ApplicationConstants;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import com.training.excel.controller.dto.ExcelDataDTO;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
-@RequestMapping(ApplicationConstants.EXCEL)
 public class ExcelController {
 
-    /**
-     * Generates an Excel file with dynamic data and returns it as a downloadable resource.
-     *
-     * @return ResponseEntity containing the generated Excel file.
-     * @throws IOException if there is an issue creating or writing to the Excel file.
-     */
-    @GetMapping(ApplicationConstants.GENERATE_EXCEL)
-    public ResponseEntity<ByteArrayResource> generateExcel() throws IOException {
+    @PostMapping("/generateExcel")
+    public ResponseEntity<ByteArrayResource> generateExcel(@RequestBody List<ExcelDataDTO> dynamicData) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("DynamicSheet");
 
-        // Create some sample data
-        String[] headers = {"Name", "Age", "Country"};
-        Object[][] data = {
-                {"Nagaraj", 28, "USA"},
-                {"vigi", 25, "Canada"},
-                {"Daniel", 28, "UK"}
-        };
-
         // Create header row
+        String[] headers = {"Name", "Age", "Country"};
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
         }
 
-        // Create data rows
-        for (int i = 0; i < data.length; i++) {
-            Row dataRow = sheet.createRow(i + 1);
-            for (int j = 0; j < data[i].length; j++) {
-                Cell cell = dataRow.createCell(j);
-                if (data[i][j] instanceof String) {
-                    cell.setCellValue((String) data[i][j]);
-                } else if (data[i][j] instanceof Integer) {
-                    cell.setCellValue((Integer) data[i][j]);
-                }
-            }
+        // Create data rows from dynamic data
+        for (int i = 0; i < dynamicData.size(); i++) {
+            Row dataRow = sheet.createRow(i + 1); // Start from the second row (0-based index)
+            ExcelDataDTO rowData = dynamicData.get(i);
+            Cell nameCell = dataRow.createCell(0);
+            nameCell.setCellValue(rowData.getName());
+            Cell ageCell = dataRow.createCell(1);
+            ageCell.setCellValue(rowData.getAge());
+            Cell countryCell = dataRow.createCell(2);
+            countryCell.setCellValue(rowData.getCountry());
         }
 
         // Write workbook to a ByteArrayOutputStream

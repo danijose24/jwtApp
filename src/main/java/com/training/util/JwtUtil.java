@@ -49,13 +49,21 @@ public class JwtUtil {
     }
 
     public String generateToken(UserDetails userDetails) {
-
         Map<String, Object> claims = new HashMap<>();
 
-       List<String> role = userDetails.getAuthorities().stream()
+        // Get the roles and permissions associated with the user
+        List<String> roles = userDetails.getAuthorities().stream()
+                .filter(auth -> auth.getAuthority().startsWith("ROLE_"))
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        claims.put("role", role);
+
+        List<String> permissions = userDetails.getAuthorities().stream()
+                .filter(auth -> !auth.getAuthority().startsWith("ROLE_"))
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
+        claims.put("roles", roles);
+        claims.put("permissions", permissions);
 
         return Jwts.builder()
                 .setClaims(claims)

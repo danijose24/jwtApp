@@ -18,11 +18,19 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeServiceImpl(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
+    /**
+     * Method to get Employee All Employees
+     * @return
+     */
+
     @Override
     public List<Employee> getAllEmployees() {
         return employeeDAO.getAllEmployees();
     }
-
+    /**
+     * Method to add Employee to the List
+     * @return
+     */
     @Override
     public List<Employee> addEmployeeToList(Employee employee) {
         return employeeDAO.addEmployeeToList(employee);

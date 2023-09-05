@@ -25,6 +25,7 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     }
 
     /**
+     * Method to add Employee to the List
      * @param employee
      * @return
      */
@@ -35,6 +36,7 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     }
 
     /**
+     * Method to get employee by ID
      * @param id
      * @return
      */
@@ -46,6 +48,7 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     }
 
     /**
+     * Method to delete a Employee from the List by Employee ID
      * @param id
      * @return updated List after Delete the Object from the list
      */

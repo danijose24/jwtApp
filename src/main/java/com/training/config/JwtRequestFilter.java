@@ -7,7 +7,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.training.employee.controller.EmployeeController;
 import com.training.util.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +47,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 			try {
 				username = jwtTokenUtil.getUsernameFromToken(jwtToken);
 			} catch (IllegalArgumentException e) {
-				logger.info("Unable to get JWT Token");
+				logger.error("Unable to get JWT Token");
 			} catch (ExpiredJwtException e) {
 				logger.error("JWT Token has expired");
 			}

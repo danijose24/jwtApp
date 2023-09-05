@@ -6,11 +6,51 @@
 </head>
 <body>
 <h1>File Comparison</h1>
+<table>
 
-<form th:action="@{/compare}" method="post" enctype="multipart/form-data">
-    <input type="file" name="sourceFile" accept=".txt"><br>
-    <input type="file" name="destinationFile" accept=".txt"><br>
-    <button type="submit">Compare</button>
-</form>
+
+    <form th:action="@{/compare}" method="post" enctype="multipart/form-data">
+        <tr>
+            <td>
+                <label for="sourceFile">Source File:</label>
+            </td>
+            <td>
+                <input type="file" id="sourceFile" name="sourceFile" accept=".txt"><br>
+
+            </td>
+        </tr>
+        </br>
+        <tr>
+            <td>
+                <label for="destinationFile">Destination File:</label>
+
+            </td>
+            <td>
+                <input type="file" id="destinationFile" name="destinationFile" accept=".txt"><br>
+
+            </td>
+        </tr>
+        </br>
+        <tr>
+            <td></td>
+            <td>
+                <button type="submit">Compare</button>
+
+            </td>
+        </tr>
+    </form>
+    <tr>
+        <td>
+            <button type="submit" onclick="redirectToHome()">Home</button>
+        </td>
+    </tr>
+</table>
+
+
+<script>
+    function redirectToHome() {
+        window.location.href = "fileHome";
+    }
+</script>
 </body>
 </html>
